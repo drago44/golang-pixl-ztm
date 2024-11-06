@@ -13,6 +13,7 @@ type PxCanvasConfig struct {
 	PxRows, PxCols int
 	PxSize         int
 }
+
 type State struct {
 	BrushColor     color.Color
 	BrushType      int
