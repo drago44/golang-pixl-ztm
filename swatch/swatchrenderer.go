@@ -12,7 +12,7 @@ type SwatchRenderer struct {
 	parent  *Swatch
 }
 
-func (renderer *SwatchRenderer) MainSize() fyne.Size {
+func (renderer *SwatchRenderer) MinSize() fyne.Size {
 	return renderer.square.MinSize()
 }
 
