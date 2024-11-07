@@ -25,6 +25,14 @@ type PxCanvas struct {
 	showMouse   bool
 }
 
+func (pxCanvas *PxCanvas) Cursor() desktop.Cursor {
+	if pxCanvas.showMouse {
+		return desktop.DefaultCursor
+	} else {
+		return desktop.HiddenCursor
+	}
+}
+
 func (pxCanvas *PxCanvas) Bounds() image.Rectangle {
 	x0 := int(pxCanvas.CanvasOffset.X)
 	y0 := int(pxCanvas.CanvasOffset.Y)
@@ -47,11 +55,13 @@ func InBounds(pos fyne.Position, bounds image.Rectangle) bool {
 
 func NewBlankImage(cols, rows int, c color.Color) image.Image {
 	img := image.NewNRGBA(image.Rect(0, 0, cols, rows))
+
 	for y := 0; y < rows; y++ {
 		for x := 0; x < cols; x++ {
 			img.Set(x, y, c)
 		}
 	}
+
 	return img
 }
 
@@ -71,6 +81,7 @@ func (pxCanvas *PxCanvas) CreateRenderer() fyne.WidgetRenderer {
 	canvasImage := canvas.NewImageFromImage(pxCanvas.PixelData)
 	canvasImage.ScaleMode = canvas.ImageScalePixels
 	canvasImage.FillMode = canvas.ImageFillContain
+
 	canvasBorder := make([]canvas.Line, 4)
 
 	for i := 0; i < len(canvasBorder); i++ {
@@ -93,4 +104,55 @@ func (pxCanvas *PxCanvas) TryPan(previousCoord *fyne.PointEvent, ev *desktop.Mou
 	if previousCoord != nil && ev.Button == desktop.MouseButtonTertiary {
 		pxCanvas.Pan(*previousCoord, ev.PointEvent)
 	}
+}
+
+// Brushable interface
+func (pxCanvas *PxCanvas) SetColor(c color.Color, x, y int) {
+	if nrgba, ok := pxCanvas.PixelData.(*image.NRGBA); ok {
+		nrgba.Set(x, y, c)
+	}
+
+	if rgba, ok := pxCanvas.PixelData.(*image.RGBA); ok {
+		rgba.Set(x, y, c)
+	}
+
+	pxCanvas.Refresh()
+}
+
+func (pxCanvas *PxCanvas) MouseToCanvasXY(ev *desktop.MouseEvent) (*int, *int) {
+	bounds := pxCanvas.Bounds()
+
+	if !InBounds(ev.Position, bounds) {
+		return nil, nil
+	}
+
+	pxSize := float32(pxCanvas.PxSize)
+	xOffset := pxCanvas.CanvasOffset.X
+	yOffset := pxCanvas.CanvasOffset.Y
+
+	x := int((ev.Position.X - xOffset) / pxSize)
+	y := int((ev.Position.Y - yOffset) / pxSize)
+
+	return &x, &y
+}
+
+func (pxCanvas *PxCanvas) LoadImage(img image.Image) {
+	dimensions := img.Bounds()
+
+	pxCanvas.PxCanvasConfig.PxCols = dimensions.Dx()
+	pxCanvas.PxCanvasConfig.PxRows = dimensions.Dy()
+
+	pxCanvas.PixelData = img
+	pxCanvas.reloadImage = true
+	pxCanvas.Refresh()
+}
+
+func (pxCanvas *PxCanvas) NewDrawing(cols, rows int) {
+	pxCanvas.appState.SetFilePath("")
+
+	pxCanvas.PxCols = cols
+	pxCanvas.PxRows = rows
+
+	pixelData := NewBlankImage(cols, rows, color.NRGBA{128, 128, 128, 255})
+	pxCanvas.LoadImage(pixelData)
 }

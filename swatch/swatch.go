@@ -25,11 +25,12 @@ func NewSwatch(state *apptype.State, color color.Color, swatchIndex int, clickHa
 	swatch := &Swatch{
 		Selected:     false,
 		Color:        color,
-		SwatchIndex:  swatchIndex,
 		clickHandler: clickHandler,
+		SwatchIndex:  swatchIndex,
 	}
 
 	swatch.ExtendBaseWidget(swatch)
+
 	return swatch
 }
 
